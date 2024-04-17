@@ -95,12 +95,12 @@ def get_tunnel():
     tunnel = read_tunnel_from_db(id)
     
     if tunnel == None:
-        return jsonify({"status": "NOK", "message": "Wrong tunnel ID"}), 401
+        return jsonify({"status": "NOK", "message": "Wrong tunnel ID"}), 404
     
     server_ip = get('https://api.ipify.org').content.decode('utf8')
-    return jsonify({"status": "OK", "serverIP": server_ip, "remotePort": tunnel.remote_port, "bindPort": tunnel.bind_port, "token": tunnel.token, "tunnelID": tunnel.id, "message": "Tunnel get request OK"})
-
-users = {}
+    return jsonify({"status": "OK", "serverIP": server_ip, "remotePort": tunnel.remote_port, "bindPort": tunnel.bind_port, "token": tunnel.token, "tunnelID": tunnel.id, "message": "Tunnel get request OK"}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, port=44444)
+    from waitress import serve
+    serve(app, host="0.0.0.0", port=44444)
+    # app.run(host='0.0.0.0', debug=True, port=44444)
