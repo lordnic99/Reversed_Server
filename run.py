@@ -5,6 +5,11 @@ import os
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import func
 import server_conf_generator
+import instance_deploy
+import sys
+from requests import get
+    
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///proxy_endpoint.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -31,31 +36,27 @@ def insert_tunnel_to_db(tunnel_name, remote_port, bind_port, token, config_name)
     db.session.commit()
     return new_data.id
    
-def read_tunnel_from_db(config_name):
-   tunnel = Tunnel.query.get(config_name)
+def read_tunnel_from_db(id):
+   tunnel = Tunnel.query.get(id)
    if tunnel:
-       return tunnel.id
+       return tunnel
    else:
        return None
 
-def read_all_tunnels():
-  tunnels = Tunnel.query.all()
+# def read_all_tunnels():
+#   tunnels = Tunnel.query.all()
 
-  if not tunnels:
-    print("No tunnels found in the database.")
-    return
+#   if not tunnels:
+#     print("No tunnels found in the database.")
+#     return
 
-  print("{:<20} {:<20} {:<20} {:<40} {:<40}".format(
-      'Name', 'Remote Port', 'Bind Port', 'Token', 'Config Name'))
-  print("-" * 140)
+#   print("{:<20} {:<20} {:<20} {:<40} {:<40}".format(
+#       'Name', 'Remote Port', 'Bind Port', 'Token', 'Config Name'))
+#   print("-" * 140)
 
-  for tunnel in tunnels:
-    print("{:<20} {:<20} {:<20} {:<40} {:<40}".format(
-        tunnel.id, tunnel.remote_port, tunnel.bind_port, tunnel.token, tunnel.config_name))
-    
-def delete_all_tunnels():
-    db.session.query(Tunnel).delete()
-    print("All tunnel data deleted successfully.")
+#   for tunnel in tunnels:
+#     print("{:<20} {:<20} {:<20} {:<40} {:<40}".format(
+#         tunnel.id, tunnel.remote_port, tunnel.bind_port, tunnel.token, tunnel.config_name))
 
 def token_required(f):
     def decorator(*args, **kwargs):
@@ -81,7 +82,7 @@ def create_tunnel():
     
     tunnel_id = insert_tunnel_to_db(tunnel_name, str(remote_port), str(bind_port), token, config_name)
     
-    # tunnel_id = db.session.execute("SELECT last_insert_rowid()").fetchone()[0]
+    instance_deploy.main(config_name)
     
     return jsonify({"status": "OK", "serverIP": server_ip, "remotePort": remote_port, "bindPort": bind_port, "token": token, "tunnelID": tunnel_id, "message": "Tunnel created OK"}), 201
 
@@ -90,12 +91,14 @@ def create_tunnel():
 @app.route('/gettunnel', methods=['GET'])
 @token_required
 def get_tunnel():
-    read_all_tunnels()
-    # delete_all_tunnels()
-    # name = request.args.get('name')
-    # if not name or name not in users:
-    #     return "Tunnel not found", 404
-    return "hoang", 200
+    id = request.args.get('id')
+    tunnel = read_tunnel_from_db(id)
+    
+    if tunnel == None:
+        return jsonify({"status": "NOK", "message": "Wrong tunnel ID"}), 401
+    
+    server_ip = get('https://api.ipify.org').content.decode('utf8')
+    return jsonify({"status": "OK", "serverIP": server_ip, "remotePort": tunnel.remote_port, "bindPort": tunnel.bind_port, "token": tunnel.token, "tunnelID": tunnel.id, "message": "Tunnel get request OK"})
 
 users = {}
 

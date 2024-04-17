@@ -52,7 +52,7 @@ bind_addr = "0.0.0.0:{bind_port}"
 
 def save_used_ports_to_csv(port_list, config_dir=".config/reversed_server", filename="port_used.csv"):
   full_path = os.path.join(str(Path.home()), config_dir, filename)
-  
+  print(full_path)
   os.makedirs(os.path.dirname(full_path), exist_ok=True)
 
   with open(full_path, "a", newline="") as csvfile:
