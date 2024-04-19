@@ -95,7 +95,7 @@ def main(tunnel_name):
     bind_port = available_ports[1]
     token = generate_token()
     server_ip = get('https://api.ipify.org').content.decode('utf8')
-    config_name = ''.join(random.choice(string.ascii_letters + string.digits) for i in range(10))
+    config_name = ''.join(random.choice(string.ascii_letters + string.digits) for i in range(20))
     
     print(f"-> Public IP found: {server_ip}")
     generate_server_config(token, remote_port, bind_port, tunnel_name, f"server_{config_name}")
